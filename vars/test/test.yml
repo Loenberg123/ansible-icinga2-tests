@@ -1,0 +1,25 @@
+test:
+  - name: test-1
+    command:
+       check_procs
+  - name: test-2
+    command:
+       check_procs
+  - name: test-3
+    command:
+       check_procs
+  - name: test-4
+    command:
+       check_ssh -H localhost
+  - name: test-5
+    command:
+       check_ssh -H localhost
+  - name: test-6
+    command:
+       check_ssh -H localhost
+  - name: test-7
+    command:
+       check_procs -C apt
+  - name: test-8
+    command:
+       check_procs -C apt

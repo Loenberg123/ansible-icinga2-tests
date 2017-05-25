@@ -1,0 +1,51 @@
+---
+- hosts: all
+  vars_files:
+      - vars/icinga-vars.yml
+      - vars/services.yml
+
+  tasks:
+     - name: Ensure that icinga repo exist
+       apt_repository:
+         repo=ppa:formorer/icinga
+         state=present
+       when: ansible_distribution == 'Ubuntu'
+
+     - name: Ensure that pip / httplib2 / curl are installed
+       apt:
+         name={{ item }} state=present
+       with_items:
+         - python-pip
+         - python-httplib2
+         - curl
+
+     - name: Install python requests
+       pip:
+         name=requests state=latest
+
+     - name: Update apt cache if too old
+       apt:
+         update_cache=yes cache_valid_time=14400
+
+     - name: Ensure nagios plugins package is installed
+       apt:
+         name=nagios-plugins state=present
+
+     - name: Create Icinga2 host object through API
+       uri:
+          url=https://{{ icinga_ip }}:5665/v1/objects/hosts/{{ server }}
+          method=PUT
+          user={{ api_user }}
+          password={{ api_pass }}
+          headers={'Accept':'application/json'}
+          body='{"templates":["generic-host"],"attrs":{"address":"{{ ansible_default_ipv4.address }}","check_command":"hostalive","vars.os":"Linux"}}'
+          validate_certs={{ validate }}
+          body_format=json
+          status_code=200,500
+
+     - include: tasks/generic-host.yml
+       when: "'Linux' in group_names"
+
+     - include: tasks/test-host.yml
+       when: "'Test' in group_names"
+...

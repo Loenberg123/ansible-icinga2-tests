@@ -1,0 +1,20 @@
+#!/usr/bin/python
+from subprocess import Popen, PIPE, call
+import shlex
+import requests
+
+cmd = "{{ checks_path }}{{ item.command }}"
+{% if 'Nginx' in group_names %}
+process = Popen(cmd, shell=True, stdout=PIPE)
+{% endif %}
+{% if 'Nginx' not in group_names %}
+process = Popen(shlex.split(cmd,posix=False), stdout=PIPE)
+{% endif %}
+output = process.communicate()[0]
+exit_code = process.wait()
+url = 'https://{{ icinga_ip }}:5665/v1/actions/process-check-result?service={{ server }}!{{ item.name }}'
+headers = {'Accept':'application/json'}
+payload = {'type':'Service','exit_status':exit_code,'plugin_output':output}
+r = requests.post(url,headers=headers,json=payload,verify=False,auth=('{{ api_user }}','{{ api_pass }}'))
+print output
+print exit_code
